@@ -1,0 +1,130 @@
+<!DOCTYPE hmtl>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0">
+    		<meta charset="utf-8">
+    		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro|Titillium+Web:900" rel="stylesheet">
+		<link href="main.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="header">
+			<h1>Chinese Restaurants in the US</h1>
+		</div>
+		<!--<input id="pac-input" class="controls" type="text" placeholder="Search Box">-->
+		<!-- <div class="sidebar">
+			<div class="sidebar-text">
+				<p>Enter a location</p>
+			</div>-->
+			<input id="pac-input" class="controls" type="text" placeholder="Search Box">
+		<!-- </div> -->
+		<div class="map-container">
+			<div id="map"></div>
+		</div>
+		<script>
+			var map;
+			var infoWindow;
+			var service;
+			var input;
+			var searchBox;
+			var markers;
+			var places;
+			var bounds;
+		
+			function initMap() {
+				map = new google.maps.Map(document.getElementById('map'), {
+		          center: {lat: 40.633, lng: -89.399},
+		          zoom: 10,
+		          styles: [{
+		        	  	stylers: [{ visibility: 'simplified' }]
+		          	}, {
+		        	  	elementType: 'labels',
+		        	  	stylers: [{ visibility: 'on' }]
+		          }]
+		        });
+		        
+		          infoWindow = new google.maps.InfoWindow();
+		          service = new google.maps.places.PlacesService(map);
+		        
+		          map.addListener('idle', performSearch);
+	      
+				input = document.getElementById('pac-input');
+				searchBox = new google.maps.places.SearchBox(input);
+				map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+				
+				map.addListener('bounds_changed', function() {
+					searchBox.setBounds(map.getBounds());
+				});
+				
+				markers = [];
+				searchBox.addListener('places_changed', function() {
+					places = searchBox.getPlaces();
+					
+					if (places.length == 0) {
+						return;
+					}
+					
+					markers.forEach(function(marker) {
+						marker.setMap(null);
+					});
+					markers = [];
+					
+					bounds = new google.maps.LatLngBounds();
+					places.forEach(function(place) {
+						if (!place.geometry) {
+							console.log("Returned place contains no geometry");
+							return;
+						}
+						if (place.geometry.viewport) {
+							bounds.union(place.geometry.viewport);
+						} else {
+							bounds.extend(place.geometry.location);
+						}
+					});
+					map.fitBounds(bounds);
+				});
+			}
+		      
+		      function performSearch() {
+		    	    var request = {
+		    	      bounds: map.getBounds(),
+		    	      keyword: '(Chinese) AND (restaurant)'
+		    	    };
+		    	    service.radarSearch(request, callback);
+		    	  }
+	
+		    	function callback(results, status) {
+		    	  if (status !== google.maps.places.PlacesServiceStatus.OK) {
+		    	    console.error(status);
+		    	    return;
+		    	  }
+		    	  for (var i = 0, result; result = results[i]; i++) {
+		    	    addMarker(result);
+		    	  }
+		    	}
+	
+		    	function addMarker(place) {
+		    	  var marker = new google.maps.Marker({
+		    	    map: map,
+		    	    position: place.geometry.location,
+		    	    icon: {
+		    	      url: 'https://developers.google.com/maps/documentation/javascript/images/circle.png',
+		    	      anchor: new google.maps.Point(10, 10),
+		    	      scaledSize: new google.maps.Size(10, 17)
+		    	    }
+		    	  });
+	
+		    	  google.maps.event.addListener(marker, 'click', function() {
+		    	    service.getDetails(place, function(result, status) {
+		    	      if (status !== google.maps.places.PlacesServiceStatus.OK) {
+		    	        console.error(status);
+		    	        return;
+		    	      }
+		    	      infoWindow.setContent(result.name);
+		    	      infoWindow.open(map, marker);
+		    	    });
+		    	  });
+		    	}
+	    </script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDv9gB9TM6i9b8Y_RV0AlxtgI884bBPRfo&callback=initMap&libraries=places" async defer></script>
+	</body>
+</html>
